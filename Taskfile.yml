@@ -15,6 +15,9 @@ tasks:
   variables:
     desc: Display the current variables
     cmds:
+      - 'echo "AWS Management Account ID: {{.aws_management_account_id}}"'
+      - 'echo "aws_region: {{.aws_region}}"'
+      - 'echo "repository_name: {{.repository_name}}"'
       - 'echo "Git Email: {{.git_email}}"'
     silent: true
 
