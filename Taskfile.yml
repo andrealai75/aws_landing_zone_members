@@ -1,0 +1,72 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+version: '3'
+
+vars:
+  git_email:
+    sh: git config user.email
+  aws_management_account_id:
+    sh: aws sts get-caller-identity --query "Account" --output text
+  aws_region:
+    sh: aws configure get region
+  repository_name:
+    sh: basename -s .git `git config --get remote.origin.url`
+
+tasks:
+  variables:
+    desc: Display the current variables
+    cmds:
+      - 'echo "Git Email: {{.git_email}}"'
+    silent: true
+
+  validate:
+    desc: Validate the Terraform configuration
+    cmds:
+      - cd infrastructure && terraform fmt -check -recursive -diff
+    silent: true
+
+  init:
+    desc: Perform initialization tasks
+    cmds:
+      - |
+       cd infrastructure && terraform init \
+         -backend-config="bucket={{.aws_management_account_id}}-{{.aws_region}}-terraform-state" \
+         -backend-config="key={{.repository_name}}" \
+         -backend-config="region={{.aws_region}}"
+    silent: true
+
+  plan:
+    desc: Generate and show an execution plan
+    deps:
+      - init
+    cmds:
+      - |
+        cd infrastructure && terraform plan \
+          -var="email={{.git_email}}" \
+          -var="aws_region={{.aws_region}}"
+    silent: true
+
+  apply:
+    desc: Apply the changes required to reach the desired state of the configuration
+    deps:
+      - init
+    cmds:
+       - |
+        cd infrastructure && terraform apply \
+          -var="email={{.git_email}}" \
+          -var="aws_region={{.aws_region}}"
+    silent: true
+
+  destroy:
+    desc: Destroy the Terraform-managed infrastructure
+    deps:
+      - init
+    cmds:
+      - |
+        cd infrastructure && terraform plan -destroy \
+          -var="email={{.git_email}}" \
+          -var="aws_region={{.aws_region}}"
+      - |    
+        cd infrastructure && terraform apply -destroy \
+          -var="email={{.git_email}}" \
+          -var="aws_region={{.aws_region}}"
+    silent: true
