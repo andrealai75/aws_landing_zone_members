@@ -1,4 +1,4 @@
 resource "aws_organizations_organizational_unit" "security" {
   name      = "Security"
-  parent_id = data.aws_organizations_organization.current.roots[0].id
+  parent_id = aws_organizations_organization.main.roots[0].id
 }
